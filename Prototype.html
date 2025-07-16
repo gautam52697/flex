@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalFix - Access Your Earned Salary Anytime</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+        }
+        
+        .chat-bubble-user {
+            background: #3b82f6;
+            border-radius: 18px 18px 4px 18px;
+        }
+        
+        .chat-bubble-bot {
+            background: #f1f5f9;
+            border-radius: 18px 18px 18px 4px;
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .app-container {
+            min-height: 100vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 1024px) {
+            .app-container {
+                max-width: 1400px;
+                margin: 0 auto;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                flex-direction: row;
+            }
+        }
+        
+        .sidebar {
+            transition: transform 0.3s ease;
+            z-index: 50;
+        }
+        
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 1023px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                transform: translateX(-100%);
+                z-index: 50;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+                padding-bottom: 80px; /* Space for mobile nav */
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar {
+                position: relative;
+                transform: translateX(0);
+                flex-shrink: 0;
+            }
+            .content-area {
+                margin-left: 0;
+                padding-bottom: 0;
+            }
+        }
+        
+        .mobile-nav {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            border-top: 1px solid #e5e7eb;
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-nav {
+                display: none;
+            }
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .nav-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+        }
+        
+        /* Mobile touch improvements */
+        @media (max-width: 1023px) {
+            .nav-item:hover {
+                transform: none;
+            }
+            
+            .nav-item:active {
+                transform: scale(0.95);
+                background-color: rgba(59, 130, 246, 0.1);
+            }
+        }
+        
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        
+        /* Mobile button improvements */
+        @media (max-width: 1023px) {
+            .btn-primary:hover {
+                transform: none;
+                box-shadow: none;
+            }
+            
+            .btn-primary:active {
+                transform: scale(0.98);
+                opacity: 0.9;
+            }
+        }
+        
+        .progress-bar {
+            background: linear-gradient(to right, #10b981 0%, #10b981 var(--progress), #e5e7eb var(--progress), #e5e7eb 100%);
+        }
+        
+        .earnings-tracker {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        /* Custom Slider Styling */
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, #3b82f6 0%, #3b82f6 var(--slider-progress, 10%), #e5e7eb var(--slider-progress, 10%), #e5e7eb 100%);
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="app-container relative">
+        
+        <!-- Desktop Sidebar -->
+        <div id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200">
+            <div class="p-6 border-b border-gray-200">
+                <h1 class="text-2xl font-bold text-blue-600">SalFix</h1>
+                <p class="text-sm text-gray-500">Your earned salary, instantly</p>
+            </div>
+            
+            <nav class="p-4 space-y-2">
+                <a href="#" onclick="showPage('dashboard')" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-50 active">
+                    <span class="text-xl mr-3">🏠</span>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+                <a href="#" onclick="showPage('withdraw')" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-50">
+                    <span class="text-xl mr-3">💰</span>
+                    <span class="font-medium">Access Salary</span>
+                </a>
+                <a href="#" onclick="showPage('history')" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-50">
+                    <span class="text-xl mr-3">📊</span>
+                    <span class="font-medium">History</span>
+                </a>
+                <a href="#" onclick="showPage('company')" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-50">
+                    <span class="text-xl mr-3">🏢</span>
+                    <span class="font-medium">Company Info</span>
+                </a>
+                <a href="#" onclick="showPage('referral')" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-50">
+                    <span class="text-xl mr-3">🎁</span>
+                    <span class="font-medium">Referral</span>
+                </a>
+                <a href="#" onclick="showPage('help')" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-50">
+                    <span class="text-xl mr-3">💬</span>
+                    <span class="font-medium">Help & FAQ</span>
+                </a>
+            </nav>
+            
+            <div class="absolute bottom-4 left-4 right-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center mb-2">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                            <span class="text-sm">👤</span>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm">Gautam Singh</p>
+                            <p class="text-xs text-gray-500">TechCorp Solutions</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-xs text-red-600 hover:text-red-700">Logout</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden" onclick="closeSidebar()"></div>
+        
+        <!-- Main Content Area -->
+        <div class="content-area">
+            
+            <!-- Landing/Login Page -->
+            <div id="loginPage" class="page min-h-screen flex flex-col">
+                <div class="gradient-bg flex-1 flex flex-col justify-center items-center px-4 text-white">
+                    <div class="text-center mb-12 max-w-md">
+                        <h1 class="text-4xl lg:text-5xl font-bold mb-4">SalFix</h1>
+                        <p class="text-lg lg:text-xl opacity-90 leading-relaxed">
+                            Access your earned salary instantly – no loans, no interest.
+                        </p>
+                    </div>
+                    
+                    <div class="w-24 h-24 lg:w-32 lg:h-32 bg-white/20 rounded-full flex items-center justify-center mb-8">
+                        <span class="text-4xl lg:text-5xl">⚡</span>
+                    </div>
+                    
+                    <div class="text-center mb-12 max-w-sm">
+                        <p class="text-base lg:text-lg opacity-90">
+                            Worked 15 days? Access 15 days salary.<br>
+                            It's your money, get it when you need it.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 lg:p-8">
+                    <div class="max-w-md mx-auto">
+                        <h2 class="text-xl lg:text-2xl font-semibold mb-6 text-center">Employee Login</h2>
+                        
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Employee ID / Mobile</label>
+                            <input type="text" placeholder="Enter your employee ID or mobile" 
+                                   class="w-full p-4 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <button onclick="showPage('dashboard')" 
+                                class="btn-primary w-full text-white py-4 rounded-xl text-base lg:text-lg font-semibold mb-4">
+                            Access My Account
+                        </button>
+                        
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500 mb-2">
+                                Powered by your company's HR system
+                            </p>
+                            <p class="text-xs text-gray-400">
+                                Secure • Real-time • No Credit Check
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="page hidden flex flex-col min-h-screen">
+                <!-- Header -->
+                <div class="bg-white border-b border-gray-200 p-4 lg:p-6 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <button onclick="toggleSidebar()" class="lg:hidden mr-4 p-2 rounded-lg hover:bg-gray-100">
+                                <span class="text-xl">☰</span>
+                            </button>
+                            <div>
+                                <h2 class="text-xl lg:text-2xl font-semibold">Hi Gautam! 👋</h2>
+                                <p class="text-gray-600 text-sm lg:text-base">TechCorp Solutions • Software Engineer</p>
+                            </div>
+                        </div>
+                        <div class="hidden sm:flex items-center space-x-4">
+                            <div class="text-right">
+                                <p class="text-sm text-gray-500">Next Payday</p>
+                                <p class="font-semibold">Dec 31, 2024</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Main Content -->
+                <div class="flex-1 p-4 lg:p-6 overflow-y-auto">
+                    <!-- Earnings Tracker -->
+                    <div class="earnings-tracker border border-blue-200 rounded-2xl p-6 lg:p-8 mb-8">
+                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-900 mb-2">Your Earnings This Month</h3>
+                                <p class="text-blue-700 text-sm">Based on real-time attendance & work hours</p>
+                            </div>
+                            <div class="mt-4 lg:mt-0 text-right">
+                                <p class="text-sm text-blue-600">Days Worked</p>
+                                <p class="text-2xl font-bold text-blue-900" id="daysWorked">18 / 22</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm text-blue-700 mb-2">
+                                <span>Month Progress</span>
+                                <span id="monthProgress">82%</span>
+                            </div>
+                            <div class="h-3 bg-gray-200 rounded-full progress-bar" style="--progress: 82%"></div>
+                        </div>
+                        
+                        <!-- Earnings Breakdown -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-white/70 p-4 rounded-xl">
+                                <p class="text-sm text-blue-600 mb-1">Monthly Salary</p>
+                                <p class="text-xl font-bold text-blue-900">₹45,000</p>
+                            </div>
+                            <div class="bg-white/70 p-4 rounded-xl">
+                                <p class="text-sm text-green-600 mb-1">Earned So Far</p>
+                                <p class="text-xl font-bold text-green-700" id="earnedAmount">₹36,818</p>
+                            </div>
+                            <div class="bg-white/70 p-4 rounded-xl">
+                                <p class="text-sm text-purple-600 mb-1">Available Now</p>
+                                <p class="text-xl font-bold text-purple-700" id="availableAmount">₹22,091</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Access Card -->
+                    <div class="card bg-gradient-to-r from-blue-600 to-green-500 text-white p-6 lg:p-8 rounded-2xl mb-8">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-4 sm:mb-0">
+                                <p class="text-blue-100 text-sm lg:text-base mb-2">Ready to access</p>
+                                <h3 class="text-3xl lg:text-4xl font-bold mb-4">₹22,091</h3>
+                                <p class="text-blue-100 text-sm mb-4">From 18 days of work • No fees • Instant transfer</p>
+                                <button onclick="showPage('withdraw')" 
+                                        class="bg-white text-blue-600 px-6 lg:px-8 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors">
+                                    Access My Salary
+                                </button>
+                            </div>
+                            <div class="text-6xl lg:text-8xl opacity-20">⚡</div>
+                        </div>
+                    </div>
+                    
+                    <!-- How It Works -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                        <div class="card bg-white border border-gray-200 p-4 lg:p-6 rounded-xl">
+                            <div class="flex items-center mb-4">
+                                <span class="text-2xl mr-3">📊</span>
+                                <h4 class="font-semibold">Real-Time Tracking</h4>
+                            </div>
+                            <p class="text-gray-600 text-sm">We track your daily work hours through your company's system</p>
+                        </div>
+                        
+                        <div class="card bg-white border border-gray-200 p-4 lg:p-6 rounded-xl">
+                            <div class="flex items-center mb-4">
+                                <span class="text-2xl mr-3">⚡</span>
+                                <h4 class="font-semibold">Instant Access</h4>
+                            </div>
+                            <p class="text-gray-600 text-sm">Get your earned salary in 2 minutes via UPI</p>
+                        </div>
+                        
+                        <div class="card bg-white border border-gray-200 p-4 lg:p-6 rounded-xl">
+                            <div class="flex items-center mb-4">
+                                <span class="text-2xl mr-3">🔄</span>
+                                <h4 class="font-semibold">Auto Deduction</h4>
+                            </div>
+                            <p class="text-gray-600 text-sm">Amount deducted from next salary automatically</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="card bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-semibold text-lg">Recent Activity</h4>
+                            <button onclick="showPage('history')" class="text-blue-600 text-sm font-medium">View All</button>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                        <span class="text-green-600 text-sm">✓</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">₹15,000 accessed</p>
+                                        <p class="text-sm text-gray-600">Dec 15, 2024 • 10 days work</p>
+                                    </div>
+                                </div>
+                                <span class="text-green-600 text-sm font-medium">Deducted</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                        <span class="text-blue-600 text-sm">⚡</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">₹8,200 accessed</p>
+                                        <p class="text-sm text-gray-600">Dec 8, 2024 • 5 days work</p>
+                                    </div>
+                                </div>
+                                <span class="text-orange-600 text-sm font-medium">Due Dec 31</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Access Salary Page -->
+            <div id="withdrawPage" class="page hidden flex flex-col h-screen">
+                <!-- Header -->
+                <div class="bg-white border-b border-gray-200 p-4 flex items-center">
+                    <button onclick="toggleSidebar()" class="lg:hidden mr-4 p-2 rounded-lg hover:bg-gray-100">
+                        <span class="text-xl">☰</span>
+                    </button>
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                            <span class="text-lg">⚡</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">SalFix Assistant</h3>
+                            <p class="text-xs text-green-500">● Connected to HR System</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Earnings Summary -->
+                <div class="bg-blue-50 border-b border-blue-200 p-4">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-blue-600 mb-1">Your Earned Salary (18 days)</p>
+                                <p class="text-2xl font-bold text-blue-900">₹36,818</p>
+                            </div>
+                            <div class="mt-2 sm:mt-0 text-right">
+                                <p class="text-sm text-green-600">Available to Access</p>
+                                <p class="text-xl font-bold text-green-700">₹22,091</p>
+                                <p class="text-xs text-gray-500">₹14,727 kept as buffer (40%)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat Messages -->
+                <div class="flex-1 p-4 space-y-4 overflow-y-auto bg-gray-50" id="chatMessages">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <span class="text-sm">⚡</span>
+                        </div>
+                        <div class="chat-bubble-bot p-4 max-w-xs lg:max-w-md">
+                            <p class="text-sm lg:text-base">Arre Gautam bhai! 18 din kaam kiya hai tu, ₹36,818 earn kiya hai. Dekh, ₹22,091 tak main de sakta hun safely (60% of earned). Kitne paise chahiye? Bol de! 💰</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="bg-white border-t border-gray-200 p-4">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <input type="number" id="withdrawAmount" placeholder="Enter amount..." 
+                                   max="22091" class="flex-1 p-3 lg:p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-base">
+                            <button onclick="sendWithdrawRequest()" 
+                                    class="bg-blue-600 text-white p-3 lg:p-4 rounded-xl hover:bg-blue-700 transition-colors">
+                                <span class="text-lg">→</span>
+                            </button>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2" id="quickAmountButtons">
+                            <button onclick="quickAmount(5000)" class="bg-gray-100 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">₹5,000</button>
+                            <button onclick="quickAmount(10000)" class="bg-gray-100 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">₹10,000</button>
+                            <button onclick="quickAmount(15000)" class="bg-gray-100 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">₹15,000</button>
+                            <button onclick="quickAmount(22091)" class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-200 transition-colors">Max ₹22,091</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction History Page -->
+            <div id="historyPage" class="page hidden flex flex-col min-h-screen">
+                <div class="bg-white border-b border-gray-200 p-4 lg:p-6 flex-shrink-0">
+                    <div class="flex items-center">
+                        <button onclick="toggleSidebar()" class="lg:hidden mr-4 p-2 rounded-lg hover:bg-gray-100">
+                            <span class="text-xl">☰</span>
+                        </button>
+                        <h3 class="text-xl lg:text-2xl font-semibold">Salary Access History</h3>
+                    </div>
+                </div>
+                
+                <div class="flex-1 p-4 lg:p-6 overflow-y-auto">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div class="card bg-white p-4 lg:p-6 rounded-xl border border-gray-200 text-center">
+                            <p class="text-2xl lg:text-3xl font-bold text-blue-600">₹85,500</p>
+                            <p class="text-gray-600 text-sm">Total Accessed</p>
+                        </div>
+                        <div class="card bg-white p-4 lg:p-6 rounded-xl border border-gray-200 text-center">
+                            <p class="text-2xl lg:text-3xl font-bold text-green-600">₹0</p>
+                            <p class="text-gray-600 text-sm">Fees Paid</p>
+                        </div>
+                        <div class="card bg-white p-4 lg:p-6 rounded-xl border border-gray-200 text-center">
+                            <p class="text-2xl lg:text-3xl font-bold text-purple-600">15</p>
+                            <p class="text-gray-600 text-sm">Transactions</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Transaction List -->
+                    <div class="space-y-4">
+                        <div class="card bg-white border border-gray-200 rounded-xl p-4 lg:p-6">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div class="mb-3 sm:mb-0">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-xl mr-3">⚡</span>
+                                        <div>
+                                            <p class="font-semibold text-lg">₹15,000</p>
+                                            <p class="text-sm text-gray-600">Dec 15, 2024 • 10 days earned</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500">Instant transfer • No fees</p>
+                                </div>
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Deducted ✓</span>
+                            </div>
+                        </div>
+                        
+                        <div class="card bg-white border border-gray-200 rounded-xl p-4 lg:p-6">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div class="mb-3 sm:mb-0">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-xl mr-3">⚡</span>
+                                        <div>
+                                            <p class="font-semibold text-lg">₹8,200</p>
+                                            <p class="text-sm text-gray-600">Dec 8, 2024 • 5 days earned</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500">Instant transfer • No fees</p>
+                                </div>
+                                <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">Due Dec 31</span>
+                            </div>
+                        </div>
+                        
+                        <div class="card bg-white border border-gray-200 rounded-xl p-4 lg:p-6">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div class="mb-3 sm:mb-0">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-xl mr-3">⚡</span>
+                                        <div>
+                                            <p class="font-semibold text-lg">₹22,500</p>
+                                            <p class="text-sm text-gray-600">Nov 28, 2024 • 15 days earned</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500">Instant transfer • No fees</p>
+                                </div>
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Deducted ✓</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Company Integration Page -->
+            <div id="companyPage" class="page hidden flex flex-col min-h-screen">
+                <div class="bg-white border-b border-gray-200 p-4 lg:p-6 flex-shrink-0">
+                    <div class="flex items-center">
+                        <button onclick="toggleSidebar()" class="lg:hidden mr-4 p-2 rounded-lg hover:bg-gray-100">
+                            <span class="text-xl">☰</span>
+                        </button>
+                        <h3 class="text-xl lg:text-2xl font-semibold">Company Integration</h3>
+                    </div>
+                </div>
+                
+                <div class="flex-1 p-4 lg:p-6 overflow-y-auto">
+                    <div class="max-w-4xl mx-auto">
+                        <!-- Company Status -->
+                        <div class="card bg-white border border-gray-200 rounded-xl p-6 lg:p-8 mb-8">
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center">
+                                    <div class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mr-4">
+                                        <span class="text-2xl">🏢</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-semibold">TechCorp Solutions</h3>
+                                        <p class="text-gray-600">Software Development Company</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
+                                    <span class="text-green-600 font-medium">Active Integration</span>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <p class="text-sm text-blue-600 mb-1">Integration Type</p>
+                                    <p class="font-semibold">API Connected</p>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg">
+                                    <p class="text-sm text-green-600 mb-1">Data Sync</p>
+                                    <p class="font-semibold">Real-time</p>
+                                </div>
+                                <div class="bg-purple-50 p-4 rounded-lg">
+                                    <p class="text-sm text-purple-600 mb-1">Last Updated</p>
+                                    <p class="font-semibold">2 mins ago</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Your Employment Details -->
+                        <div class="card bg-white border border-gray-200 rounded-xl p-6 lg:p-8 mb-8">
+                            <h4 class="font-semibold text-lg mb-4">Your Employment Details</h4>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Employee ID</p>
+                                    <p class="font-semibold">TC-2024-1156</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Department</p>
+                                    <p class="font-semibold">Software Engineering</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Designation</p>
+                                    <p class="font-semibold">Senior Software Engineer</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Joining Date</p>
+                                    <p class="font-semibold">March 15, 2022</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Monthly Salary</p>
+                                    <p class="font-semibold">₹45,000</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Work Schedule</p>
+                                    <p class="font-semibold">Mon-Fri, 9 AM - 6 PM</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Attendance Tracking -->
+                        <div class="card bg-white border border-gray-200 rounded-xl p-6 lg:p-8 mb-8">
+                            <h4 class="font-semibold text-lg mb-4">Attendance Tracking</h4>
+                            
+                            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium">This Month Progress</span>
+                                    <span class="text-sm text-blue-600">18/22 days</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full">
+                                    <div class="h-2 bg-blue-600 rounded-full" style="width: 82%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-green-600">18</p>
+                                    <p class="text-sm text-gray-600">Days Present</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-orange-600">2</p>
+                                    <p class="text-sm text-gray-600">Days Leave</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-blue-600">144</p>
+                                    <p class="text-sm text-gray-600">Hours Worked</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-purple-600">8.0</p>
+                                    <p class="text-sm text-gray-600">Avg Hours/Day</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Integration Benefits -->
+                        <div class="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-xl p-6 lg:p-8">
+                            <h4 class="font-semibold text-lg mb-4 text-blue-900">Integration Benefits</h4>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="flex items-start">
+                                    <span class="text-green-600 text-xl mr-3">✓</span>
+                                    <div>
+                                        <p class="font-medium text-blue-900">Real-time Salary Calculation</p>
+                                        <p class="text-sm text-blue-700">Based on actual work hours and attendance</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-start">
+                                    <span class="text-green-600 text-xl mr-3">✓</span>
+                                    <div>
+                                        <p class="font-medium text-blue-900">Automatic Payroll Deduction</p>
+                                        <p class="text-sm text-blue-700">Seamless integration with HR systems</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-start">
+                                    <span class="text-green-600 text-xl mr-3">✓</span>
+                                    <div>
+                                        <p class="font-medium text-blue-900">No Manual Verification</p>
+                                        <p class="text-sm text-blue-700">Company validates all employee data</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-start">
+                                    <span class="text-green-600 text-xl mr-3">✓</span>
+                                    <div>
+                                        <p class="font-medium text-blue-900">Instant Approvals</p>
+                                        <p class="text-sm text-blue-700">Pre-approved by your employer</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Referral Page -->
+            <div id="referralPage" class="page hidden flex flex-col min-h-screen">
+                <div class="bg-white border-b border-gray-200 p-4 lg:p-6 flex-shrink-0">
+                    <div class="flex items-center">
+                        <button onclick="toggleSidebar()" class="lg:hidden mr-4 p-2 rounded-lg hover:bg-gray-100">
+                            <span class="text-xl">☰</span>
+                        </button>
+                        <h3 class="text-xl lg:text-2xl font-semibold">Refer Colleagues</h3>
+                    </div>
+                </div>
+                
+                <div class="flex-1 p-4 lg:p-6 overflow-y-auto">
+                    <div class="max-w-2xl mx-auto">
+                        <!-- Hero Section -->
+                        <div class="text-center mb-8">
+                            <span class="text-6xl lg:text-8xl mb-4 block">🎁</span>
+                            <h3 class="text-2xl lg:text-3xl font-semibold mb-4">Refer colleagues, earn ₹100</h3>
+                            <p class="text-gray-600 text-base lg:text-lg">Help your teammates access their earned salary stress-free</p>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div class="grid grid-cols-2 gap-4 mb-8">
+                            <div class="card bg-blue-50 border border-blue-200 p-4 lg:p-6 rounded-xl text-center">
+                                <p class="text-2xl lg:text-3xl font-bold text-blue-600">5</p>
+                                <p class="text-blue-800 text-sm lg:text-base">Colleagues Referred</p>
+                            </div>
+                            <div class="card bg-green-50 border border-green-200 p-4 lg:p-6 rounded-xl text-center">
+                                <p class="text-2xl lg:text-3xl font-bold text-green-600">₹500</p>
+                                <p class="text-green-800 text-sm lg:text-base">Bonus Earned</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Referral Code -->
+                        <div class="card bg-white border border-gray-200 p-4 lg:p-6 rounded-xl mb-6">
+                            <p class="text-sm lg:text-base text-gray-600 font-medium mb-3">Your referral code</p>
+                            <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                                <span class="font-mono text-lg lg:text-xl font-bold">GAUTAM-TC2024</span>
+                                <button onclick="copyReferralCode()" class="text-blue-600 font-medium hover:text-blue-700 transition-colors">Copy</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Share Buttons -->
+                        <div class="space-y-4">
+                            <button onclick="shareWithColleagues()" 
+                                    class="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center">
+                                <span class="text-xl mr-3">👥</span>
+                                Share with TechCorp Colleagues
+                            </button>
+                            <button onclick="shareWhatsApp()" 
+                                    class="w-full bg-green-600 text-white py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center">
+                                <span class="text-xl mr-3">📱</span>
+                                Share on WhatsApp
+                            </button>
+                        </div>
+                        
+                        <!-- How it Works -->
+                        <div class="mt-8 bg-gray-50 p-4 lg:p-6 rounded-xl">
+                            <h4 class="font-semibold mb-4">How it works:</h4>
+                            <div class="space-y-3 text-sm lg:text-base">
+                                <div class="flex items-start">
+                                    <span class="text-blue-600 mr-3">1.</span>
+                                    <p>Share your code with TechCorp colleagues</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-blue-600 mr-3">2.</span>
+                                    <p>They sign up and access their first earned salary</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-blue-600 mr-3">3.</span>
+                                    <p>You both get ₹100 bonus in next salary!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help & FAQ Page -->
+            <div id="helpPage" class="page hidden flex flex-col min-h-screen">
+                <div class="bg-white border-b border-gray-200 p-4 lg:p-6 flex-shrink-0">
+                    <div class="flex items-center">
+                        <button onclick="toggleSidebar()" class="lg:hidden mr-4 p-2 rounded-lg hover:bg-gray-100">
+                            <span class="text-xl">☰</span>
+                        </button>
+                        <h3 class="text-xl lg:text-2xl font-semibold">Help & Support</h3>
+                    </div>
+                </div>
+                
+                <div class="flex-1 p-4 lg:p-6 overflow-y-auto">
+                    <div class="max-w-4xl mx-auto">
+                        <!-- Quick Actions -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                            <button onclick="startChat()" 
+                                    class="card bg-blue-600 text-white p-6 rounded-xl hover:bg-blue-700 transition-colors">
+                                <div class="flex items-center justify-center mb-3">
+                                    <span class="text-3xl">💬</span>
+                                </div>
+                                <h4 class="font-semibold text-lg mb-2">Live Chat Support</h4>
+                                <p class="text-blue-100 text-sm">Get instant help from our team</p>
+                            </button>
+                            
+                            <button onclick="contactHR()" 
+                                    class="card bg-white border border-gray-200 p-6 rounded-xl hover:bg-gray-50 transition-colors">
+                                <div class="flex items-center justify-center mb-3">
+                                    <span class="text-3xl">🏢</span>
+                                </div>
+                                <h4 class="font-semibold text-lg mb-2">Contact HR Team</h4>
+                                <p class="text-gray-600 text-sm">Reach out to TechCorp HR</p>
+                            </button>
+                        </div>
+                        
+                        <!-- FAQ Section -->
+                        <div class="card bg-white border border-gray-200 rounded-xl p-4 lg:p-6">
+                            <h4 class="font-semibold text-lg lg:text-xl mb-6">Frequently Asked Questions</h4>
+                            
+                            <div class="space-y-4">
+                                <div class="border-b border-gray-200 pb-4">
+                                    <button onclick="toggleFAQ(1)" class="w-full text-left flex justify-between items-center">
+                                        <span class="font-medium">How is my earned salary calculated?</span>
+                                        <span class="text-gray-400 text-xl">+</span>
+                                    </button>
+                                    <div id="faq1" class="hidden mt-3 text-gray-600 text-sm lg:text-base">
+                                        Your earned salary is calculated based on your actual work days and hours tracked by your company's HR system. We sync in real-time with TechCorp's attendance system to ensure accuracy.
+                                    </div>
+                                </div>
+                                
+                                <div class="border-b border-gray-200 pb-4">
+                                    <button onclick="toggleFAQ(2)" class="w-full text-left flex justify-between items-center">
+                                        <span class="font-medium">Are there any fees or interest?</span>
+                                        <span class="text-gray-400 text-xl">+</span>
+                                    </button>
+                                    <div id="faq2" class="hidden mt-3 text-gray-600 text-sm lg:text-base">
+                                        No fees or interest at all! This is your earned salary, not a loan. We partner with your company to provide this as an employee benefit.
+                                    </div>
+                                </div>
+                                
+                                <div class="border-b border-gray-200 pb-4">
+                                    <button onclick="toggleFAQ(3)" class="w-full text-left flex justify-between items-center">
+                                        <span class="font-medium">How does repayment work?</span>
+                                        <span class="text-gray-400 text-xl">+</span>
+                                    </button>
+                                    <div id="faq3" class="hidden mt-3 text-gray-600 text-sm lg:text-base">
+                                        The amount is automatically deducted from your next salary through TechCorp's payroll system. No manual action needed from your side.
+                                    </div>
+                                </div>
+                                
+                                <div class="border-b border-gray-200 pb-4">
+                                    <button onclick="toggleFAQ(4)" class="w-full text-left flex justify-between items-center">
+                                        <span class="font-medium">What if I leave the company?</span>
+                                        <span class="text-gray-400 text-xl">+</span>
+                                    </button>
+                                    <div id="faq4" class="hidden mt-3 text-gray-600 text-sm lg:text-base">
+                                        Any outstanding amount will be deducted from your final settlement. Your company's HR team handles this process seamlessly.
+                                    </div>
+                                </div>
+                                
+                                <div class="pb-4">
+                                    <button onclick="toggleFAQ(5)" class="w-full text-left flex justify-between items-center">
+                                        <span class="font-medium">Is my data secure?</span>
+                                        <span class="text-gray-400 text-xl">+</span>
+                                    </button>
+                                    <div id="faq5" class="hidden mt-3 text-gray-600 text-sm lg:text-base">
+                                        Absolutely! We use bank-grade encryption and only access data that your company explicitly shares through secure APIs. Your personal information is never compromised.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Contact Info -->
+                        <div class="mt-8 text-center">
+                            <p class="text-gray-600 mb-2">Still have questions?</p>
+                            <p class="text-sm text-gray-500">Email us at <a href="mailto:support@salfix.com" class="text-blue-600">support@salfix.com</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tip Slider Modal -->
+            <div id="tipModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl p-6 lg:p-8 max-w-md w-full slide-in">
+                    <div class="text-center mb-6">
+                        <span class="text-6xl mb-4 block">💝</span>
+                        <h3 class="text-xl lg:text-2xl font-bold mb-2">Support SalFix</h3>
+                        <p class="text-gray-600 text-sm">Help us keep this service free for everyone</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-sm text-gray-600">Tip Amount</span>
+                            <span class="text-2xl font-bold text-blue-600">₹<span id="tipAmountDisplay">25</span></span>
+                        </div>
+                        
+                        <div class="relative mb-4">
+                            <input type="range" id="tipSlider" min="0" max="500" value="25" step="5" 
+                                   class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider">
+                            <div class="flex justify-between text-xs text-gray-500 mt-2">
+                                <span>₹0</span>
+                                <span>₹250</span>
+                                <span>₹500</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-4 gap-2 mb-4">
+                            <button onclick="setTipAmount(10)" class="bg-gray-100 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm transition-colors">₹10</button>
+                            <button onclick="setTipAmount(25)" class="bg-gray-100 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm transition-colors">₹25</button>
+                            <button onclick="setTipAmount(50)" class="bg-gray-100 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm transition-colors">₹50</button>
+                            <button onclick="setTipAmount(100)" class="bg-gray-100 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm transition-colors">₹100</button>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                            <p class="text-xs text-blue-700 mb-1">💡 Your contribution helps us:</p>
+                            <ul class="text-xs text-blue-600 space-y-1">
+                                <li>• Keep the service completely free</li>
+                                <li>• Add new features for employees</li>
+                                <li>• Maintain 24/7 support</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="confirmTip()" 
+                                class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+                            Add ₹<span id="confirmTipAmount">25</span> Tip
+                        </button>
+                        <button onclick="closeTipModal()" 
+                                class="px-6 py-3 border border-gray-200 rounded-xl font-semibold hover:bg-gray-50 transition-colors">
+                            Skip
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Modal -->
+            <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl p-6 lg:p-8 max-w-md w-full text-center slide-in">
+                    <span class="text-8xl mb-6 block">⚡</span>
+                    <h2 class="text-2xl lg:text-3xl font-bold mb-4">Paise aa rahe hain! 🚀</h2>
+                    <p class="text-gray-600 mb-2">₹<span id="withdrawnAmount">15000</span> tera UPI pe 2 minute mein pahunch jayega</p>
+                    <p class="text-sm text-gray-500 mb-2" id="successMessage">From your earned salary • No fees</p>
+                    <p class="text-sm text-gray-500 mb-8">Auto-deducted from next salary on Dec 31</p>
+                    
+                    <button onclick="closeSuccessModal()" 
+                            class="btn-primary text-white px-8 py-3 rounded-xl font-semibold">
+                        Sahi hai bhai! 👍
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Bottom Navigation -->
+        <div class="mobile-nav fixed bottom-0 left-0 right-0 p-2 z-40">
+            <div class="max-w-sm mx-auto">
+                <div class="flex justify-around">
+                    <button onclick="showPage('dashboard')" class="nav-item flex flex-col items-center p-2 text-blue-600">
+                        <span class="text-xl mb-1">🏠</span>
+                        <span class="text-xs font-medium">Home</span>
+                    </button>
+                    <button onclick="showPage('withdraw')" class="nav-item flex flex-col items-center p-2 text-gray-400">
+                        <span class="text-xl mb-1">⚡</span>
+                        <span class="text-xs">Access</span>
+                    </button>
+                    <button onclick="showPage('history')" class="nav-item flex flex-col items-center p-2 text-gray-400">
+                        <span class="text-xl mb-1">📊</span>
+                        <span class="text-xs">History</span>
+                    </button>
+                    <button onclick="showPage('company')" class="nav-item flex flex-col items-center p-2 text-gray-400">
+                        <span class="text-xl mb-1">🏢</span>
+                        <span class="text-xs">Company</span>
+                    </button>
+                    <button onclick="showPage('referral')" class="nav-item flex flex-col items-center p-2 text-gray-400">
+                        <span class="text-xl mb-1">🎁</span>
+                        <span class="text-xs">Refer</span>
+                    </button>
+                    <button onclick="showPage('help')" class="nav-item flex flex-col items-center p-2 text-gray-400">
+                        <span class="text-xl mb-1">💬</span>
+                        <span class="text-xs">Help</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWithdrawAmount = 0;
+        let currentTipAmount = 0;
+        let totalTransferAmount = 0;
+        
+        // Employee data (would come from company integration)
+        const employeeData = {
+            id: 'TC-2024-1156',
+            name: 'Gautam Singh',
+            company: 'TechCorp Solutions',
+            department: 'Software Engineering',
+            designation: 'Senior Software Engineer',
+            monthlySalary: 45000,
+            dailySalary: 2045, // 45000/22 working days
+            daysWorked: 18,
+            totalEarned: 36818, // 18 * 2045 (rounded)
+            availableAmount: 22091, // 60% of earned (40% buffer for safety)
+            totalWithdrawn: 0, // Track total withdrawn this month
+            nextPayday: '2024-12-31'
+        };
+
+        // Page Navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            // Show target page
+            const targetPage = document.getElementById(pageId + 'Page');
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+                targetPage.classList.add('slide-in');
+                
+                // Update navigation active states
+                updateNavigation(pageId);
+                
+                // Close sidebar on mobile
+                closeSidebar();
+                
+                setTimeout(() => {
+                    targetPage.classList.remove('slide-in');
+                }, 300);
+            }
+        }
+
+        function updateNavigation(activePageId) {
+            // Update sidebar navigation
+            document.querySelectorAll('#sidebar .nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Update mobile navigation
+            document.querySelectorAll('.mobile-nav .nav-item').forEach(item => {
+                item.classList.remove('text-blue-600');
+                item.classList.add('text-gray-400');
+            });
+            
+            // Set active states based on page
+            const pageNavMap = {
+                'dashboard': 0,
+                'withdraw': 1,
+                'history': 2,
+                'company': 3,
+                'referral': 4,
+                'help': 5
+            };
+            
+            const navIndex = pageNavMap[activePageId];
+            if (navIndex !== undefined) {
+                // Sidebar
+                const sidebarItems = document.querySelectorAll('#sidebar .nav-item');
+                if (sidebarItems[navIndex]) {
+                    sidebarItems[navIndex].classList.add('active');
+                }
+                
+                // Mobile nav
+                const mobileItems = document.querySelectorAll('.mobile-nav .nav-item');
+                if (mobileItems[navIndex]) {
+                    mobileItems[navIndex].classList.remove('text-gray-400');
+                    mobileItems[navIndex].classList.add('text-blue-600');
+                }
+            }
+        }
+
+        // Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('hidden');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.add('hidden');
+        }
+
+        // Salary Access Functions
+        function quickAmount(amount) {
+            if (amount > employeeData.availableAmount) {
+                // Add friendly error message to chat
+                const chatMessages = document.getElementById('chatMessages');
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'flex items-start fade-in';
+                errorMessage.innerHTML = `
+                    <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                        <span class="text-sm">😅</span>
+                    </div>
+                    <div class="chat-bubble-bot p-4 max-w-xs lg:max-w-md bg-red-50 border border-red-200">
+                        <p class="text-sm lg:text-base">Arre bhai, itna zyada nahi de sakta! Max ₹${employeeData.availableAmount.toLocaleString()} tak hi safely de sakta hun. Tera earned salary ke hisaab se! 😊</p>
+                    </div>
+                `;
+                chatMessages.appendChild(errorMessage);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                return;
+            }
+            document.getElementById('withdrawAmount').value = amount;
+            sendWithdrawRequest();
+        }
+
+        function sendWithdrawRequest() {
+            const amount = document.getElementById('withdrawAmount').value;
+            
+            if (!amount || amount <= 0) {
+                // Add friendly error message to chat
+                const chatMessages = document.getElementById('chatMessages');
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'flex items-start fade-in';
+                errorMessage.innerHTML = `
+                    <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                        <span class="text-sm">🤔</span>
+                    </div>
+                    <div class="chat-bubble-bot p-4 max-w-xs lg:max-w-md bg-orange-50 border border-orange-200">
+                        <p class="text-sm lg:text-base">Bhai, kitne paise chahiye? Amount toh bata de! 😄</p>
+                    </div>
+                `;
+                chatMessages.appendChild(errorMessage);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                return;
+            }
+            
+            if (amount > employeeData.availableAmount) {
+                // Add friendly error message to chat
+                const chatMessages = document.getElementById('chatMessages');
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'flex items-start fade-in';
+                errorMessage.innerHTML = `
+                    <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                        <span class="text-sm">😅</span>
+                    </div>
+                    <div class="chat-bubble-bot p-4 max-w-xs lg:max-w-md bg-red-50 border border-red-200">
+                        <p class="text-sm lg:text-base">Arre bhai, itna zyada nahi de sakta! Max ₹${employeeData.availableAmount.toLocaleString()} tak hi safely de sakta hun. Tera earned salary ke hisaab se! 😊</p>
+                    </div>
+                `;
+                chatMessages.appendChild(errorMessage);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                return;
+            }
+            
+            currentWithdrawAmount = amount;
+            
+            // Add user message
+            const chatMessages = document.getElementById('chatMessages');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'flex justify-end';
+            userMessage.innerHTML = `
+                <div class="chat-bubble-user text-white p-4 max-w-xs lg:max-w-md">
+                    <p class="text-sm lg:text-base">₹${amount}</p>
+                </div>
+            `;
+            chatMessages.appendChild(userMessage);
+            
+            // Add bot response after delay
+            setTimeout(() => {
+                const botMessage = document.createElement('div');
+                botMessage.className = 'flex items-start fade-in';
+                botMessage.innerHTML = `
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                        <span class="text-sm">⚡</span>
+                    </div>
+                    <div class="chat-bubble-bot p-4 max-w-xs lg:max-w-md">
+                        <p class="text-sm lg:text-base mb-3">Bilkul sahi! ₹${amount} tera earned salary se process kar raha hun. 2 minute mein tera UPI pe aa jayega! 🚀</p>
+                        
+                        <div class="bg-blue-50 p-3 rounded-lg mb-3">
+                            <p class="text-xs text-blue-600 mb-2">💡 Agar mann hai toh: SalFix ko tip de de</p>
+                            <p class="text-xs text-gray-500">Sabke liye free rakhne mein help kar de</p>
+                        </div>
+                        
+                        <div id="finalAmount" class="hidden">
+                            <p class="text-sm text-gray-600 mb-3">Total: ₹<span id="totalWithTip">${amount}</span> • UPI transfer 2 min mein • Payday pe auto-deduct! 🚀</p>
+                            <button onclick="processSalaryAccess()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                                Haan bhai, bhej de! →
+                            </button>
+                        </div>
+                    </div>
+                `;
+                chatMessages.appendChild(botMessage);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Show tip popup automatically after bot message appears
+                setTimeout(() => {
+                    showTipSlider();
+                }, 800);
+            }, 600);
+            
+            // Clear input
+            document.getElementById('withdrawAmount').value = '';
+        }
+
+        function showTipSlider() {
+            const modal = document.getElementById('tipModal');
+            modal.classList.remove('hidden');
+            // Force reflow to ensure smooth animation
+            modal.offsetHeight;
+        }
+
+        function closeTipModal() {
+            const modal = document.getElementById('tipModal');
+            modal.classList.add('hidden');
+            skipTip();
+        }
+
+        function setTipAmount(amount) {
+            const slider = document.getElementById('tipSlider');
+            slider.value = amount;
+            updateTipDisplay(amount);
+        }
+
+        function updateTipDisplay(amount) {
+            document.getElementById('tipAmountDisplay').textContent = amount;
+            document.getElementById('confirmTipAmount').textContent = amount;
+            
+            // Update slider progress
+            const slider = document.getElementById('tipSlider');
+            const progress = (amount / 500) * 100;
+            slider.style.setProperty('--slider-progress', `${progress}%`);
+        }
+
+        function confirmTip() {
+            const tipAmount = parseInt(document.getElementById('tipSlider').value);
+            currentTipAmount = tipAmount;
+            totalTransferAmount = parseInt(currentWithdrawAmount) + tipAmount;
+            
+            // Hide modal first for smooth transition
+            document.getElementById('tipModal').classList.add('hidden');
+            
+            // Update display
+            document.getElementById('totalWithTip').textContent = totalTransferAmount;
+            document.getElementById('finalAmount').classList.remove('hidden');
+            
+            // Hide tip selection
+            const tipSection = document.querySelector('.bg-blue-50');
+            if (tipSection) {
+                tipSection.style.display = 'none';
+            }
+        }
+
+        function skipTip() {
+            currentTipAmount = 0;
+            totalTransferAmount = parseInt(currentWithdrawAmount);
+            
+            // Update display
+            document.getElementById('totalWithTip').textContent = totalTransferAmount;
+            document.getElementById('finalAmount').classList.remove('hidden');
+            
+            // Hide tip selection
+            const tipSection = document.querySelector('.bg-blue-50');
+            if (tipSection) {
+                tipSection.style.display = 'none';
+            }
+        }
+
+        function processSalaryAccess() {
+            // Update available amount after withdrawal
+            employeeData.availableAmount -= totalTransferAmount;
+            employeeData.totalWithdrawn += totalTransferAmount;
+            
+            // Update dashboard amounts
+            updateDashboardData();
+            
+            // Show success modal with tip info
+            document.getElementById('withdrawnAmount').textContent = totalTransferAmount;
+            
+            const successMessage = document.getElementById('successMessage');
+            if (currentTipAmount > 0) {
+                successMessage.textContent = `₹${currentWithdrawAmount} salary + ₹${currentTipAmount} tip • Shukriya bhai, SalFix ko support karne ke liye! 🙏`;
+            } else {
+                successMessage.textContent = 'Tera earned salary se • Koi fees nahi';
+            }
+            
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.add('hidden');
+            showPage('dashboard');
+        }
+
+        // Referral Functions
+        function copyReferralCode() {
+            navigator.clipboard.writeText('GAUTAM-TC2024').then(() => {
+                alert('Referral code copied! 📋');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = 'GAUTAM-TC2024';
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Referral code copied! 📋');
+            });
+        }
+
+        function shareWithColleagues() {
+            alert('Opening company directory to share with TechCorp colleagues... 👥');
+        }
+
+        function shareWhatsApp() {
+            const message = `Hey! Check out SalFix - access your earned salary anytime before payday. No fees, instant transfer! Our company TechCorp has integrated it. Use my code GAUTAM-TC2024 and we both get ₹100 bonus!`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
+        }
+
+        // Support Functions
+        function startChat() {
+            alert('Connecting to SalFix support team... Our experts are ready to help! 💬');
+        }
+
+        function contactHR() {
+            alert('Redirecting to TechCorp HR portal... You can reach out to your HR team for any employment-related queries! 🏢');
+        }
+
+        function toggleFAQ(num) {
+            const faqElement = document.getElementById(`faq${num}`);
+            const button = faqElement.previousElementSibling.querySelector('span:last-child');
+            
+            if (faqElement.classList.contains('hidden')) {
+                faqElement.classList.remove('hidden');
+                button.textContent = '−';
+            } else {
+                faqElement.classList.add('hidden');
+                button.textContent = '+';
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                showPage('login');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial navigation state
+            updateNavigation('dashboard');
+            
+            // Update dashboard with employee data
+            updateDashboardData();
+            
+            // Initialize tip slider
+            const tipSlider = document.getElementById('tipSlider');
+            if (tipSlider) {
+                tipSlider.addEventListener('input', function() {
+                    updateTipDisplay(this.value);
+                });
+                
+                // Set initial slider progress
+                updateTipDisplay(25);
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 1024) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        function updateDashboardData() {
+            // Update earnings data on dashboard
+            const monthProgress = Math.round((employeeData.daysWorked / 22) * 100);
+            document.getElementById('monthProgress').textContent = `${monthProgress}%`;
+            document.getElementById('daysWorked').textContent = `${employeeData.daysWorked} / 22`;
+            document.getElementById('earnedAmount').textContent = `₹${employeeData.totalEarned.toLocaleString()}`;
+            document.getElementById('availableAmount').textContent = `₹${employeeData.availableAmount.toLocaleString()}`;
+            
+            // Update progress bar
+            const progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.setProperty('--progress', `${monthProgress}%`);
+            }
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'95f4897a463198f2',t:'MTc1MjUzMjk4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
